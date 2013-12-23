@@ -69,7 +69,7 @@ def ValidatePrefs():
 
 ####################################################################################################
 @handler(PREFIX, TITLE, thumb=ICON, art=ART)
-def MainMenu(view_group="InfoList", no_cache=True):
+def MainMenu(view_group="InfoList"):
 	"""
 	First function and main menu for your channel
 
@@ -99,13 +99,14 @@ def MainMenu(view_group="InfoList", no_cache=True):
 		oc.add(DirectoryObject(key=Callback(GetIndex), title="Manage Your Music Catalog", summary="View and edit your existing music library"))
 		oc.add(DirectoryObject(key=Callback(GetUpcoming), title="Future Releases", summary="See which artists in your catalog have future releases", thumb=R(UPCOMING)))
 		oc.add(DirectoryObject(key=Callback(GetHistory), title="History", summary="See which albums have been snatched/downloaded recently", thumb=R(HISTORY)))
+		oc.add(DirectoryObject(key=Callback(Wanted), title="Wanted List", summary="Wanted albums", thumb=R(WANTED)))
 		# an InputDO in the MainMenu of a channel will work ( in web) when only in the main menu, but anywhere else subsequent, it fails
 		#oc.add(InputDirectoryObject(key=Callback(SearchMenu), title="search", summary="Results of search", prompt="Search for:", thumb=R(SEARCH_ICON)))
 		#oc.add(InputDirectoryObject(key=Callback(SearchMenu), title="Plex/Web search", summary="Results of search", prompt="Search for:", thumb=R(SEARCH_ICON)))
 		oc.add(DirectoryObject(key=Callback(SearchMenu), title="Search", summary="Album or Artist Search for Plex Home Theater client", thumb=R(SEARCH_ICON)))
-		oc.add(PrefsObject(title="Preferences", summary="Set Headphones preferences", thumb=R(PREFS_ICON)))
 		oc.add(DirectoryObject(key=Callback(Suggestions), title="Suggestions",
 	            summary="Artists suggested by Headphones app", thumb=R(ICON)))
+		oc.add(PrefsObject(title="Preferences", summary="Set Headphones preferences", thumb=R(PREFS_ICON)))
 	else:
 		oc.add(PrefsObject(title="Preferences", summary="PLUGIN IS CURRENTLY UNABLE TO CONNECT TO HEADPHONES.\nSet Headphones plugin preferences to allow it to connect to Headphones server",
             thumb=R(PREFS_ICON)))
@@ -224,6 +225,38 @@ def Suggestions():
 				thumb=R(NO_ARTIST_ART)))
 	return oc
 
+@route(PREFIX + '/wanted')
+def Wanted():
+	"""
+	Display wanted albums
+
+	"""
+	oc = ObjectContainer()
+	results = headphones.getWanted()
+
+	for result in results:
+		title=result['AlbumTitle']
+		summary="%s %s Date: %s" % (result['Type'], result['ArtistName'], result['ReleaseDate'])
+		thumb=result['ThumbURL']
+		oc.add(DirectoryObject(key=Callback(PageSelect, ArtistID=result['ArtistID'], AlbumID=result['AlbumID']),
+			title=title,
+			summary=summary,
+			thumb=Resource.ContentsOfURLWithFallback(url=thumb, fallback=R(NO_ARTIST_ART))))	
+	return oc
+
+@route(PREFIX + '/pageselect')
+def PageSelect(ArtistID=None, AlbumID=None):
+	"""
+	Display page to view either album or artist details
+
+	"""
+	Log('ARTIST: %s, ALBUM: %s' % (ArtistID, AlbumID))
+
+	oc = ObjectContainer(title2="More Details", no_cache=True)
+	oc.add(PopupDirectoryObject(key=Callback(ArtistPage, ArtistID=ArtistID), title="Artist's Page"))
+	oc.add(PopupDirectoryObject(key=Callback(ReleaseDetails, AlbumID=AlbumID), title="Album Details"))
+	return oc
+
 
 @route(PREFIX + '/searchmenu')
 def SearchMenu():
@@ -233,8 +266,8 @@ def SearchMenu():
 	"""
 	oc = ObjectContainer(title2="Search Menu", no_cache=True)
 
-	oc.add(DirectoryObject(key=Callback(SearchPage, ARTIST=True), title="Add Artist", summary="Search for an Artist", thumb=R(SEARCH_ICON)))
-	oc.add(DirectoryObject(key=Callback(SearchPage, ALBUM=True), title="Add Album", summary="Search for an album", thumb=R(SEARCH_ICON)))    
+	oc.add(DirectoryObject(key=Callback(SearchPage, ARTIST=True), title="Add Artist", summary="Search for an Artist"))
+	oc.add(DirectoryObject(key=Callback(SearchPage, ALBUM=True), title="Add Album", summary="Search for an album"))    
 
 	return oc
 
@@ -350,7 +383,7 @@ def AddArtist(ArtistID):
 
 @route(PREFIX + '/addalbum')
 def AddAlbum(AlbumID):
-	if headphones.addAlbum(AlbumID):
+	if (headphones.addAlbum(AlbumID)) and (headphones.queueAlbum(AlbumID)):
 		return ObjectContainer(header="Headphones", message="Album Added to Wanted List")
 
 
