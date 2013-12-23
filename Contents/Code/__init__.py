@@ -77,8 +77,15 @@ def MainMenu(view_group="InfoList", no_cache=True):
 	Display Main Menu if API_K was retrieved
 	TODO: make search compatible in Plex/Web
 	"""
+	oc = ObjectContainer()
+	Log("Loading Preferences, Username: %s" % Prefs['hpUsername'])
+	Log("Loading Preferences, Password: %s" % Prefs['hpPassword'])
+	Log("Loading Preferences, https: %s" % Prefs['https'])
+	Log("Loading Preferences, Host IP: %s" % Prefs['hpIP'])
 
 	API_KEY = False
+	Log('API_KEY bool is: %s' % API_KEY)
+	Log('Dict[API_K] is holding: %s' % Dict['API_K'])
 	if Dict['API_K']:
 		API_KEY = True
 		Dict['settings_modified'] = False
@@ -93,10 +100,10 @@ def MainMenu(view_group="InfoList", no_cache=True):
 		except:
 			pass
 
-	oc = ObjectContainer()
 	
-	
-	if API_KEY:
+
+	if API_KEY:		
+		Log('API_K retrieved: %s' % API_KEY)
 		oc.add(DirectoryObject(key=Callback(GetIndex), title="Manage Your Music Catalog", summary="View and edit your existing music library"))
 		oc.add(DirectoryObject(key=Callback(GetUpcoming), title="Future Releases", summary="See which artists in your catalog have future releases", thumb=R(UPCOMING)))
 		oc.add(DirectoryObject(key=Callback(GetHistory), title="History", summary="See which albums have been snatched/downloaded recently", thumb=R(HISTORY)))
