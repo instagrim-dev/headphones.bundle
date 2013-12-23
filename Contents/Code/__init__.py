@@ -64,8 +64,8 @@ def ValidatePrefs():
     """
     if Prefs['hpUsername'] and Prefs['hpPassword']:
         try:
-            headphones.API_K = headphones.getAPI_K()
-            Dict['API_K'] = headphones.getAPI_K()
+            #headphones.API_K = headphones.getAPI_K()
+            Dict['API_K'] = headphones.API_K
             return
         except:
             return ObjectContainer(header="Unable to retrieve API key", message="Please confirm that your settings are correct.")
@@ -95,9 +95,11 @@ def MainMenu(view_group="InfoList"):
 	else:
 		try:
 			headphones.API_K = headphones.getAPI_K()
-			Dict['API_K'] = headphones.API_K
 		except:
 			Log('Failed to get the key')
+			oc.add(PrefsObject(title="Preferences", summary="PLUGIN IS CURRENTLY UNABLE TO CONNECT TO Retrieve API_K.\nCheck network settings & channel preferences",
+			thumb=R(PREFS_ICON)))
+			return oc
 
 	if API_KEY:		
 		oc.add(DirectoryObject(key=Callback(GetIndex), title="Manage Your Music Catalog", summary="View and edit your existing music library"))
