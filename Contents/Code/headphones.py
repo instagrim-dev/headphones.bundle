@@ -1,8 +1,7 @@
-import uuid, urllib, re, json as JSON, getlink
-#import urllib, re, getlink
+import urllib, re, json as JSON, getlink
 
 """
-"Headphones" Plex Channel code
+"Headphones" API
 
 The API is still pretty new and needs some serious cleaning up on the backend but should be
 reasonably functional. There are no error codes yet,
@@ -12,9 +11,20 @@ Data returned in json format. If executing a command like 'delArtist' or 'addArt
 $commands&parameters[&optionalparameters]
 """
 
-class HPURLOpener(urllib.FancyURLopener):
-    # read an URL, with automatic HTTP authentication
+# Preference defaults
+SSL = "False"
+IP  = "0.0.0.0"
+PORT= "8181"
+HTTP_ROOT=None
+username=""
+password=""
+API_K=None
 
+class HPURLOpener(urllib.FancyURLopener):
+    """
+    read an URL, with automatic HTTP authentication
+
+    """
     def setpasswd(self, user, passwd):
         self.myuser = user
         self.mypasswd = passwd
@@ -22,24 +32,15 @@ class HPURLOpener(urllib.FancyURLopener):
     def prompt_user_passwd(self, host, realm):
         return self.myuser, self.mypasswd
 
-# get HP prefs
-#order these intuitively, by standard URL structure, or mimmick SB/CP bundles
-SSL = ""
-IP = ""
-PORT = ""
-API_K = ''	# this is inconvenient for typing into plex
-HTTP_ROOT = ""
-username = ""
-password = ""
-
 def HP_URL():
-	""" Craft URL to HP server """
-	SSL = Prefs['https']
-	IP = Prefs['hpIP']
-	PORT = Prefs['hpPort']
-	HTTP_ROOT = Prefs['hpURLBase']
-	username = Prefs['hpUsername']
-	password = Prefs['hpPassword']
+	""" 
+	Craft URL to HP server 
+
+	"""
+	global SSL
+	global HTTP_ROOT
+	global PORT
+	global HTTP_ROOT
 
 	if SSL:
 		SSL="https"
@@ -52,20 +53,28 @@ def HP_URL():
 		HTTP_ROOT = "/"
 	return '%s://%s:%s%s' % (SSL, IP, PORT, HTTP_ROOT)
 
-def getAPI_K(username=None, password=None):
-	""" return API_KEY """
-	username=Prefs['hpUsername']
-	password=Prefs['hpPassword']
+def getAPI_K():
+	"""
+	Scape API_KEY from "HP_URL/config" 
+
+	"""
+	global username
+	global password
+
 	urlopener = HPURLOpener()
 	urlopener.setpasswd(username, password)
 	api_key_page = urlopener.open(HP_URL() + "config").read()
 	API_K = re.search('(?<=Current API key: <strong>)[a-z0-9]{32}',api_key_page).group(0)
-	Dict['API_K'] = API_K
 	return API_K
 
 def API_URL():
-	""" Craft API URL to HP """
-	return HP_URL() + 'api?apikey=%s' % Dict['API_K']
+	""" 
+	Craft URL for issuing API Calls (HP_URL + API_K)
+
+	"""
+	global API_K
+	
+	return HP_URL() + 'api?apikey=%s' % API_K
 
 def HP_API_CALL(cmd, params = None):
 	"""
@@ -73,26 +82,17 @@ def HP_API_CALL(cmd, params = None):
 
 	http(s)://IP:port/http_root/api?apikey=API_K&cmd=$command&cmdparameters
 	"""
-	#print "debug1: ", cmd
-	Log('cmd argument: %s' % cmd)
 	CMD = '&cmd=%s' % cmd
-	#print "debug2: ", CMD
-	Log('CMD variable: %s' % CMD)
-	#print "debug3: ", params
 	if(params):
 		urllib.urlencode(params)
 		for key, value in params.iteritems():
-			#print "debug4: ",key
-			#print "debug5: ",value
 			CMD += '&%s=%s' % (key,value)
-			#print "debug6: ",CMD
 	url = API_URL() + CMD
 	Log('url created: %s' % url)
 	#try: hpResult = JSON.ObjectFromURL(url)	#plex-style
-	#print "debug1: ",JSON.dumps(JSON.load(urllib.urlopen(url)), indent=4)	#python2.x-style
+	#try: hpResult = JSON.dumps(JSON.load(urllib.urlopen(url)), indent=4)	#python2.x-style
 	try: hpResult = JSON.load(urllib.urlopen(url))
 	except:
-		## Logging line here, like in the cp.bundle
 		hpResult = {'Error':'HP_API_CALL failed'}
 	return hpResult
 
@@ -132,7 +132,6 @@ def getAlbum(AlbumID):
 	"""
 	param = {'id': AlbumID}
 	return HP_API_CALL('getAlbum',param)
-
 
 def getUpcoming():
 	"""

@@ -59,10 +59,8 @@ def ValidatePrefs():
     return a MessageContainer to display any error information to the user.
     """
     if Prefs['hpUsername'] and Prefs['hpPassword']:
-        Log("Username and Password preferences found.")
         try:
-            Dict['API_K'] = headphones.getAPI_K()
-            Log("HP API key stored for future use.")
+            headphones.API_K = headphones.getAPI_K()
             return
         except:
             return ObjectContainer(header="Unable to retrieve API key", message="Please confirm that your settings are correct.")
@@ -78,34 +76,24 @@ def MainMenu(view_group="InfoList", no_cache=True):
 	TODO: make search compatible in Plex/Web
 	"""
 	oc = ObjectContainer()
-	Log("Loading Preferences, Username: %s" % Prefs['hpUsername'])
-	Log("Loading Preferences, Password: %s" % Prefs['hpPassword'])
-	Log("Loading Preferences, https: %s" % Prefs['https'])
-	Log("Loading Preferences, Host IP: %s" % Prefs['hpIP'])
+	headphones.SSL = Prefs['https']
+	headphones.IP = Prefs['hpIP']
+	headphones.PORT = Prefs['hpPort']
+	headphones.HTTP_ROOT = Prefs['hpURLBase']
+	headphones.username = Prefs['hpUsername']
+	headphones.password = Prefs['hpPassword']
 
 	API_KEY = False
-	Log('API_KEY bool is: %s' % API_KEY)
-	Log('Dict[API_K] is holding: %s' % Dict['API_K'])
-	if Dict['API_K']:
+	if headphones.API_K:
 		API_KEY = True
 		Dict['settings_modified'] = False
 	else:
 		try:
-			Log('Dict[API_K] was empty, attempting to fetch key...: %s' % Dict['API_K'])
-			#Dict['HP_URL'] = headphones.HP_URL(Prefs['https'], Prefs['hpIP'], Prefs['hpPort'], Prefs['hpURLBase'])
-			Dict['HP_URL'] = headphones.HP_URL()
-			Log("Saved %s into Dict['HP_URL']" % Dict['HP_URL'])
-			Dict['API_URL'] = headphones.API_URL()
-			Log("Saved %s into Dict['API_URL']" % Dict['API_URL'])
-			Dict['API_K'] = headphones.getAPI_K()
-			Log("Saved %s into Dict['API_K']" % Dict['API_K'])
+			headphones.API_K = headphones.getAPI_K()
 		except:
-			pass
-
-	
+			Log('Failed to get the key')
 
 	if API_KEY:		
-		Log('API_K retrieved: %s' % API_KEY)
 		oc.add(DirectoryObject(key=Callback(GetIndex), title="Manage Your Music Catalog", summary="View and edit your existing music library"))
 		oc.add(DirectoryObject(key=Callback(GetUpcoming), title="Future Releases", summary="See which artists in your catalog have future releases", thumb=R(UPCOMING)))
 		oc.add(DirectoryObject(key=Callback(GetHistory), title="History", summary="See which albums have been snatched/downloaded recently", thumb=R(HISTORY)))
