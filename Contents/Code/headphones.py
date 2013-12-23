@@ -25,7 +25,7 @@ PORT = Prefs['hpPort']
 HTTP_ROOT = Prefs['hpURLBase']
 username = Prefs['hpUsername']
 password = Prefs['hpPassword']
-API_K = Dict['API_K']
+API_K = ""
 
 class HPURLOpener(urllib.FancyURLopener):
     """
@@ -67,6 +67,7 @@ def getAPI_K():
 	"""
 	global username
 	global password
+	global API_K
 
 	urlopener = HPURLOpener()
 	urlopener.setpasswd(username, password)
