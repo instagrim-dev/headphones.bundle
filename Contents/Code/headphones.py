@@ -12,13 +12,20 @@ $commands&parameters[&optionalparameters]
 """
 
 # Preference defaults
-SSL = "False"
-IP  = "0.0.0.0"
-PORT= "8181"
-HTTP_ROOT=None
-username=""
-password=""
-API_K=None
+#SSL = "False"
+#IP  = "0.0.0.0"
+#PORT= "8181"
+#HTTP_ROOT=None
+#username=""
+#password=""
+#API_K=None
+SSL = Prefs['https']
+IP = Prefs['hpIP']
+PORT = Prefs['hpPort']
+HTTP_ROOT = Prefs['hpURLBase']
+username = Prefs['hpUsername']
+password = Prefs['hpPassword']
+API_K = Dict['API_K']
 
 class HPURLOpener(urllib.FancyURLopener):
     """
@@ -73,7 +80,7 @@ def API_URL():
 
 	"""
 	global API_K
-	
+
 	return HP_URL() + 'api?apikey=%s' % API_K
 
 def HP_API_CALL(cmd, params = None):
@@ -371,6 +378,7 @@ def getAlbumThumb(AlbumID):
 	param = {'id': AlbumID}
 	return HP_API_CALL('getAlbumThumb',param)
 
+# Example Calls
 #print getAlbum('350f8f0c-4dc7-458b-b6af-779ef280c2c4')
 #print getSimilar()
 #print findArtist('Ross', 2)
@@ -379,107 +387,3 @@ def getAlbumThumb(AlbumID):
 #print findArtist('Frank Sinatra')
 #print getArtistInfo('197450cd-0124-4164-b723-3c22dd16494d')
 #print findAlbum('Channel Orange')
-
-# Manage Your Music LibrRY
-#1) -Edit
-#	OnClick, show:
-#		getIndex()
-#			[ArtistThumb], [ArtistName]+[Status]+[HaveTracks], [LatestAlbum]
-#				[delArtist]
-#				[pauseArtist]
-#				[resumeArtist]
-#				[refreshArtist]
-def showLibrary():
-	for result in getIndex():
-		print result['ArtistThumb'], result['ArtistName'], result['Status'], result['HaveTracks'], result['LatestAlbum']
-
-#	-Show Wanted Albums
-#		getWanted()
-#			[ThumbURL], [ArtistName], [AlbumName], [ReleaseDate], [Type]
-#			OnClick, show:
-#				deleteAlbum
-#				forceCheck
-#				markAlbumAsSkipped
-#				chooseAlternateRelease
-#				editSearchTerm
-def showWanted():
-	for result in getWanted():
-		print result['ThumbURL'], result['ArtistName'], result['AlbumTitle'], result['ReleaseDate'], result['Type']
-
-#	-Show suggestions
-#		getSimilar()
-#			ArtistName
-#			OnClick, Show:
-#				Add Artist to Catalog
-#			ArtistName
-#				OnClick, Show:
-#				Add Artist to Catalog
-#			ArtistName
-#			...
-def showSimilar():
-	for result in getSimilar():
-		print result['ArtistName']
-
-#Search
-#	1) Submit Query
-#	2) Select 'type'
-#		[album]
-#		[artist]
-#	3a)	[artist]
-#		Onclick, show:
-#			//sub-search for 'filtering'
-#			findArtist('ArtistName')
-#				[getArtistThumb], [uniquename]+[ArtistInfo], [score]
-#				OnClick:
-#					[option1: addArtist()]
-#						select 'ArtistID'
-#						check if getArtist(ID) = True
-#						print "Artist already in Database"; exit
-#						addArtist('ArtistID')
-#						print 'success/failure'
-#	3b)[album]
-#		Onclick, show:
-#			//sub-search for 'filtering'
-#			findAlbum('AlbumName')
-#				[getAlbumThumb], [uniquename]+[score]
-#				OnClick:
-#					[option1: addAlbum()]
-#						select 'AlbumID' from #1
-#						check if getAlbum(ID) = True
-#						if true: print "we have this already"; exit
-#						addAlbum('AlbumID')
-#						print 'success/failure'
-def search():
-	querya = {'AlbumName':'ocean'}
-	results = findAlbum(querya['AlbumName'])
-	#filter (sub-search loop)
-	for result in results:
-		#queried-albumart isn't cached for search queries, only HP DB lookups; so 
-		#this fetch needs to be abstracted/coded by me
-		print getlink.get_image_links(AlbumID=result['albumid'])['thumbnail'], result['uniquename'], result['score']
-
-	queryb = {'ArtistName':'ocean'}
-	results = findArtist(queryb['ArtistName'])
-	#filter (sub-search loop)
-	for result in results:
-		print getlink.get_image_links(ArtistID=result['id'])['thumbnail'], result['uniquename'], result['score']
-
-
-#Upcoming Releases
-#	OnClick, show:
-#		getUpcoming()
-#			[albumThumb], [ArtistName], [AlbumName], [ReleaseDate], [Type], [Status]
-def showUpcoming():
-	for result in getUpcoming():
-		print result['ThumbURL'], result['ArtistName'], result['AlbumTitle'], result['ReleaseDate'], result['Type'], result['Status']
-
-#Show History()
-#	OnClick, show:
-#		getHistory()
-#			[DateAdded], [FileName], [Size], [Processed]
-#			//OnClick, show:
-#			//	retry()
-#			//	new()
-def showHistory():
-	for result in getHistory():
-		print result['DateAdded'], result['FolderName'], result['Size'], result['Status']
