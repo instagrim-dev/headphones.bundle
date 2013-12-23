@@ -22,6 +22,10 @@ HISTORY 	= "icon-history.png"
 #   1) create 2 differnet channels: 1 that searches albums, & 1 that searches artists OR
 #   2) create a version that accept your query and by default lists (artist/album) and then presents you with an object to query the opposite, and returns this each time
 #   3) Create a version that does a query (limit=50) on both artist and album for your text, then interpolates the results, sorting by score
+# TODO:
+#	remove redundancy w/API ops
+#	unify search so that it can work in plex/web
+#	'polish' function names
 
 def Start():
 	"""
@@ -351,11 +355,10 @@ def QueryAlbum(query):
 @route(PREFIX + '/showartist')
 def ShowArtist(ArtistID):
 	"""
-	Display Artists "Context-Menu"
+	Display QueryArtist "Context-Menu"
 
 	"""
 	oc = ObjectContainer(title2="Add Artist", no_cache=True)
-	#oc.add(PopupDirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder"))#, thumb=R(NO_ALBUM_ART)))
 
 	oc.add(PopupDirectoryObject(key=Callback(AddArtist, ArtistID=ArtistID), title="Add this artist"))
 	#oc.add(PopupDirectoryObject(key=Callback(AddArtist), title="Add this artist"))
@@ -365,11 +368,10 @@ def ShowArtist(ArtistID):
 @route(PREFIX + '/showalbum')
 def ShowAlbum(AlbumID):
 	"""
-	Display Album "Context-Menu"
+	Display QueryAlbum "Context-Menu"
 	
 	"""
 	oc = ObjectContainer(title2="Add Album", no_cache=True)
-	#oc.add(DirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder", thumb=R(NO_ALBUM_ART)))
 
 	oc.add(PopupDirectoryObject(key=Callback(AddAlbum, AlbumID=AlbumID), title="Add this album"))
 	return oc
@@ -392,7 +394,6 @@ def ArtistPage(ArtistID):
 
 	#title2=headphones.getArtist['ArtistID']['albums']['ArtistName']
 	oc = ObjectContainer(title2="Artist Page", no_cache=True)
-	#oc.add(DirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder", thumb=R(NO_ALBUM_ART)))
 
 	#Refresh, delete, pause, remove extras, modify extras
 	oc.add(DirectoryObject(key=Callback(ReleasePage, ArtistID=ArtistID),
@@ -447,7 +448,7 @@ def ReleasePage(ArtistID):
 
 @route(PREFIX + '/releasedetails')
 def ReleaseDetails(AlbumID):
-	oc = ObjectContainer(title2="Details", no_cache=True)
+	oc = ObjectContainer(title2="Album Details", no_cache=True)
 
 	results = headphones.getAlbum(AlbumID)
 
