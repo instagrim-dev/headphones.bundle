@@ -103,7 +103,6 @@ def MainMenu(view_group="InfoList", no_cache=True):
 			pass
 
 	
-
 	if API_KEY:		
 		Log('API_K retrieved: %s' % API_KEY)
 		oc.add(DirectoryObject(key=Callback(GetIndex), title="Manage Your Music Catalog", summary="View and edit your existing music library"))
