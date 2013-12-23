@@ -52,8 +52,10 @@ def HP_URL():
 		HTTP_ROOT = "/"
 	return '%s://%s:%s%s' % (SSL, IP, PORT, HTTP_ROOT)
 
-def getAPI_K(username, password):
+def getAPI_K(username=None, password=None):
 	""" return API_KEY """
+	username=Prefs['hpUsername']
+	password=Prefs['hpPassword']
 	urlopener = HPURLOpener()
 	urlopener.setpasswd(username, password)
 	api_key_page = urlopener.open(HP_URL() + "config").read()

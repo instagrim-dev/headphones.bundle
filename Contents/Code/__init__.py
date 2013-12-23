@@ -91,7 +91,9 @@ def MainMenu(view_group="InfoList", no_cache=True):
 		Dict['settings_modified'] = False
 	else:
 		try:
-			Dict['HP_URL'] = headphones.HP_URL(Prefs['https'], Prefs['hpIP'], Prefs['hpPort'], Prefs['hpURLBase'])
+			Log('Dict[API_K] was empty, attempting to fetch key...: %s' % Dict['API_K'])
+			#Dict['HP_URL'] = headphones.HP_URL(Prefs['https'], Prefs['hpIP'], Prefs['hpPort'], Prefs['hpURLBase'])
+			Dict['HP_URL'] = headphones.HP_URL()
 			Log("Saved %s into Dict['HP_URL']" % Dict['HP_URL'])
 			Dict['API_URL'] = headphones.API_URL()
 			Log("Saved %s into Dict['API_URL']" % Dict['API_URL'])
