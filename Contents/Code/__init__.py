@@ -231,12 +231,12 @@ def Wanted():
 	Display wanted albums
 
 	"""
-	oc = ObjectContainer()
+	oc = ObjectContainer(title2="Wanted List")
 	results = headphones.getWanted()
 
 	for result in results:
 		title=result['AlbumTitle']
-		summary="%s %s Date: %s" % (result['Type'], result['ArtistName'], result['ReleaseDate'])
+		summary="%s by %s, Release Date: %s" % (result['Type'], result['ArtistName'], result['ReleaseDate'])
 		thumb=result['ThumbURL']
 		oc.add(DirectoryObject(key=Callback(PageSelect, ArtistID=result['ArtistID'], AlbumID=result['AlbumID']),
 			title=title,
