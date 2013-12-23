@@ -93,9 +93,10 @@ def MainMenu(view_group="InfoList", no_cache=True):
 		except:
 			pass
 
+	oc = ObjectContainer()
+	
+	
 	if API_KEY:
-		oc = ObjectContainer()
-
 		oc.add(DirectoryObject(key=Callback(GetIndex), title="Manage Your Music Catalog", summary="View and edit your existing music library"))
 		oc.add(DirectoryObject(key=Callback(GetUpcoming), title="Future Releases", summary="See which artists in your catalog have future releases", thumb=R(UPCOMING)))
 		oc.add(DirectoryObject(key=Callback(GetHistory), title="History", summary="See which albums have been snatched/downloaded recently", thumb=R(HISTORY)))
