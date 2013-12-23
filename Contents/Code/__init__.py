@@ -61,6 +61,7 @@ def ValidatePrefs():
     if Prefs['hpUsername'] and Prefs['hpPassword']:
         try:
             headphones.API_K = headphones.getAPI_K()
+            Dict['API_K'] = headphones.getAPI_K()
             return
         except:
             return ObjectContainer(header="Unable to retrieve API key", message="Please confirm that your settings are correct.")
@@ -82,6 +83,7 @@ def MainMenu(view_group="InfoList", no_cache=True):
 	headphones.HTTP_ROOT = Prefs['hpURLBase']
 	headphones.username = Prefs['hpUsername']
 	headphones.password = Prefs['hpPassword']
+	Dict['API_K'] = headphones.getAPI_K()
 
 	API_KEY = False
 	if headphones.API_K:
@@ -153,7 +155,6 @@ def GetUpcoming():
 	ArtistName, ReleaseDate, AlbumID, ArtistID, Type)
 	"""
 	oc = ObjectContainer(title2="Future Releases", no_cache=True)
-	#oc.add(DirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder", thumb=R(NO_ALBUM_ART)))
 	results = headphones.getUpcoming()
 	Log("results: %s" % results)
 
@@ -180,7 +181,6 @@ def GetHistory():
 	FolderName, AlbumID, Size (bytes)
 	"""
 	oc = ObjectContainer(title2="History", no_cache=True)
-	#oc.add(DirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder"))#, thumb=R(NO_ALBUM_ART)))
 	
 	results = headphones.getHistory()
 	Log("results: %s" % results)
@@ -206,7 +206,6 @@ def Suggestions():
 	Count, ArtistName, ArtistID
 	"""
 	oc = ObjectContainer(title2="Suggestions", no_cache=True)
-	#oc.add(DirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder", thumb=R(NO_ALBUM_ART)))
 	
 	results = headphones.getSimilar()
 
@@ -233,7 +232,6 @@ def SearchMenu():
 
 	"""
 	oc = ObjectContainer(title2="Search Menu", no_cache=True)
-	#oc.add(DirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder", thumb=R(NO_ALBUM_ART)))
 
 	oc.add(DirectoryObject(key=Callback(SearchPage, ARTIST=True), title="Add Artist", summary="Search for an Artist", thumb=R(SEARCH_ICON)))
 	oc.add(DirectoryObject(key=Callback(SearchPage, ALBUM=True), title="Add Album", summary="Search for an album", thumb=R(SEARCH_ICON)))    
@@ -250,8 +248,6 @@ def SearchPage(ARTIST=False, ALBUM=False):
 	Log('ARTIST: %s, ALBUM: %s' % (ARTIST, ALBUM))
 
 	oc = ObjectContainer(title2="Search Page", no_cache=True)
-	#oc.add(DirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder", thumb=R(NO_ALBUM_ART)))
-	
 
 	if ARTIST:
 		oc.add(InputDirectoryObject(key=Callback(QueryArtist), title="Search", summary="Results of search", prompt="Search for:", thumb=R(SEARCH_ICON)))
@@ -270,7 +266,6 @@ def QueryArtist(query):
 	Log.Debug('Search term(s): ' + query)
 
 	oc = ObjectContainer(title2="Search Result", no_cache=True)
-	#oc.add(DirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder", thumb=R(NO_ALBUM_ART)))
 	
 	#if ARTIST:
 		#oc.add(InputDirectoryObject(key=Callback(Query), title="search", summary="Results of search", prompt="Search for:", thumb=R(SEARCH_ICON)))
@@ -300,7 +295,6 @@ def QueryAlbum(query):
 	Log.Debug('Search term(s): ' + query)
 
 	oc = ObjectContainer(title2="Search Result", no_cache=True)
-	#oc.add(DirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder", thumb=R(NO_ALBUM_ART)))
 
 	results = headphones.findAlbum(query, LIMIT=100)
 	for result in results:
@@ -368,7 +362,7 @@ def ArtistPage(ArtistID):
 	#oc.add(DirectoryObject(key=Callback(DoNothing), title="null", summary="placeholder", thumb=R(NO_ALBUM_ART)))
 
 	#Refresh, delete, pause, remove extras, modify extras
-	oc.add(DirectoryObject(key=Callback(AlbumPage, ArtistID=ArtistID),
+	oc.add(DirectoryObject(key=Callback(ReleasePage, ArtistID=ArtistID),
 		title="Albums"))
 	oc.add(PopupDirectoryObject(key=Callback(RefreshArtist, ArtistID=ArtistID),
 		title="Refresh"))
@@ -401,24 +395,35 @@ def PauseArtist(ArtistID):
 		return ObjectContainer(header="Headphones", message="Paused Artist")
 
 
-@route(PREFIX + '/albumpage')
-def AlbumPage(ArtistID):
+@route(PREFIX + '/releasepage')
+def ReleasePage(ArtistID):
 	oc = ObjectContainer(title2="Albums", no_cache=True)
 
 	results = headphones.getArtist(ArtistID)
-	Log("results: %s" % results)
 
 	for result in results['albums']:
 		title="%s [%s]" % (result['AlbumTitle'], result['Status'])
-		summary="%s (%s)\n%s" % (result['DateAdded'], result['ReleaseDate'], result['Type'])
+		summary="%s, %s" % (result['Type'], result['ReleaseDate'])
 		thumb=result['ThumbURL']
-		oc.add(DirectoryObject(key=Callback(DoNothing),
+		oc.add(DirectoryObject(key=Callback(ReleaseDetails, AlbumID=result['AlbumID']),
 			title=title,
 			summary=summary,
 			thumb=Resource.ContentsOfURLWithFallback(url=thumb, fallback=R(NO_ARTIST_ART))))
+	return oc
 
-		pass
 
+@route(PREFIX + '/releasedetails')
+def ReleaseDetails(AlbumID):
+	oc = ObjectContainer(title2="Details", no_cache=True)
+
+	results = headphones.getAlbum(AlbumID)
+
+	for result in results['tracks']:
+		title="%i) %s\t%s" % (result['TrackNumber'], result['TrackTitle'], Datetime.Delta(milliseconds=(result['TrackDuration'])))
+		summary="%s (%s)\n%s" % (result['Location'], result['BitRate'], result['Format'])
+		oc.add(DirectoryObject(key=Callback(DoNothing),
+			title=title,
+			summary=summary))
 	return oc
 
 @route(PREFIX + '/donothing')
