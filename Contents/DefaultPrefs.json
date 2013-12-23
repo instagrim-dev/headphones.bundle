@@ -1,0 +1,46 @@
+[
+
+        {
+                "id":           "https",
+                "label":        "use SSL encryption (HTTPS)",
+                "type":         "bool",
+                "default":      "false"
+        },
+
+        {
+                "id":           "hpUsername",
+                "label":        "Username",
+                "type":         "text",
+                "default":      ""
+        },
+
+        {
+                "id":           "hpPassword",
+                "label":        "Password",
+                "type":         "text",
+                "option":       "hidden",
+                "default":      ""
+        },
+
+        {
+                "id":           "hpIP",
+                "label":        "Headphones IP",
+                "type":         "text",
+                "default":      "0.0.0.0"
+        },
+
+        {
+                "id":           "hpURLBase",
+                "label":        "Headphones URL Base",
+                "type":         "text",
+                "default":      ""
+        },
+        
+        
+        {
+                "id":           "hpPort",
+                "label":        "Headphones Port",
+                "type":         "text",
+                "default":      "8181"
+        }
+]
