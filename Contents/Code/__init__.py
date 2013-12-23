@@ -87,7 +87,6 @@ def MainMenu(view_group="InfoList"):
 	headphones.HTTP_ROOT = Prefs['hpURLBase']
 	headphones.username = Prefs['hpUsername']
 	headphones.password = Prefs['hpPassword']
-	Dict['API_K'] = headphones.getAPI_K()
 
 	API_KEY = False
 	if headphones.API_K:
@@ -96,6 +95,7 @@ def MainMenu(view_group="InfoList"):
 	else:
 		try:
 			headphones.API_K = headphones.getAPI_K()
+			Dict['API_K'] = headphones.API_K
 		except:
 			Log('Failed to get the key')
 
