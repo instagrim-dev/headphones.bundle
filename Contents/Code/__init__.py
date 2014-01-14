@@ -2,7 +2,7 @@ import getlink, headphones
 
 TITLE = L('Headphones')
 
-PREFIX = "/applications/headphones"
+PREFIX = "/music/headphones"
 
 ART     	= "art-default.jpg"
 ICON 		= "icon-default.png"
