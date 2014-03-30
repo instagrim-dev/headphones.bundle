@@ -62,13 +62,15 @@ def ValidatePrefs():
     to validate a username and password), and optionally 
     return a MessageContainer to display any error information to the user.
     """
-    if Prefs['hpUsername'] and Prefs['hpPassword']:
+    if Prefs['hpIP']:
         try:
-            #headphones.API_K = headphones.getAPI_K()
+            headphones.API_K = headphones.getAPI_K()
             Dict['API_K'] = headphones.API_K
             return
         except:
             return ObjectContainer(header="Unable to retrieve API key", message="Please confirm that your settings are correct.")
+    else:
+    	return ObjectContainer(header="Unable to retrieve API key", message="Please confirm that your settings are correct.")
 
 
 ####################################################################################################
@@ -95,8 +97,9 @@ def MainMenu(view_group="InfoList"):
 	else:
 		try:
 			headphones.API_K = headphones.getAPI_K()
+			if headphones.API_K:
+				API_KEY = True
 		except:
-			Log('Failed to get the key')
 			oc.add(PrefsObject(title="Preferences", summary="PLUGIN IS CURRENTLY UNABLE TO CONNECT TO Retrieve API_K.\nCheck network settings & channel preferences",
 			thumb=R(PREFS_ICON)))
 			return oc
@@ -109,9 +112,12 @@ def MainMenu(view_group="InfoList"):
 		# an InputDO in the MainMenu of a channel will work ( in web) when only in the main menu, but anywhere else subsequent, it fails
 		#oc.add(InputDirectoryObject(key=Callback(SearchMenu), title="search", summary="Results of search", prompt="Search for:", thumb=R(SEARCH_ICON)))
 		#oc.add(InputDirectoryObject(key=Callback(SearchMenu), title="Plex/Web search", summary="Results of search", prompt="Search for:", thumb=R(SEARCH_ICON)))
-		oc.add(DirectoryObject(key=Callback(SearchMenu), title="Search", summary="Album or Artist Search for Plex Home Theater client", thumb=R(SEARCH_ICON)))
-		oc.add(DirectoryObject(key=Callback(Suggestions), title="Suggestions",
-	            summary="Artists suggested by Headphones app", thumb=R(ICON)))
+		if Client.Product == "Web Client":
+			oc.add(InputDirectoryObject(key=Callback(QueryArtist), title="Search for Artist", summary="Find an Artist to add to Headphones", prompt="Search for", thumb=R(SEARCH_ICON)))
+		else:
+			oc.add(DirectoryObject(key=Callback(SearchMenu), title="Search", summary="Album or Artist Search for Plex Home Theater client", thumb=R(SEARCH_ICON)))
+		
+		oc.add(DirectoryObject(key=Callback(Suggestions), title="Suggestions", summary="Artists suggested by Headphones app", thumb=R(ICON)))
 		oc.add(PrefsObject(title="Preferences", summary="Set Headphones preferences", thumb=R(PREFS_ICON)))
 	else:
 		oc.add(PrefsObject(title="Preferences", summary="PLUGIN IS CURRENTLY UNABLE TO CONNECT TO HEADPHONES.\nSet Headphones plugin preferences to allow it to connect to Headphones server",
@@ -138,17 +144,20 @@ def GetIndex(offset=0):
 	#return oc
 	
 	results = headphones.getIndex()
-	#Log("results: %s" % results)
-	
-	for result in results:
-			title="%s (%s/%s) [%s]" % (result['ArtistName'], str(result['HaveTracks']), str(result['TotalTracks']), result['Status'])
-			summary = "Latest Album: %s (%s)" % (result['LatestAlbum'], result['ReleaseDate'])
-			oc.add(DirectoryObject(key=Callback(ArtistPage, ArtistID=result['ArtistID']), 
-			title=title, 
-			summary=summary, 
-			thumb=Resource.ContentsOfURLWithFallback(url=result['ThumbURL'], fallback=R(NO_ARTIST_ART))))
-	if len(results) > (offset+99):
-		oc.add(NextPageObject(key=Callback(GetIndex, offset=offset+20)))
+	if len(results) > 0 and not "Error" in results[0]:
+		for result in results:
+				title="%s (%s/%s) [%s]" % (result['ArtistName'], str(result['HaveTracks']), str(result['TotalTracks']), result['Status'])
+				summary = "Latest Album: %s (%s)" % (result['LatestAlbum'], result['ReleaseDate'])
+				oc.add(DirectoryObject(key=Callback(ArtistPage, ArtistID=result['ArtistID']), 
+				title=title, 
+				summary=summary, 
+				thumb=Resource.ContentsOfURLWithFallback(url=result['ThumbURL'], fallback=R(NO_ARTIST_ART))))
+		if len(results) > (offset+99):
+			oc.add(NextPageObject(key=Callback(GetIndex, offset=offset+20)))	
+	elif len(results) ==1:
+		oc.add(PopupDirectoryObject(key=Callback(DoNothing),
+					title="Error",
+					summary="an error occured"))
 	return oc
 
 
@@ -163,18 +172,23 @@ def GetUpcoming():
 	"""
 	oc = ObjectContainer(title2="Future Releases", no_cache=True)
 	results = headphones.getUpcoming()
-	Log("results: %s" % results)
 
 	i=0
-	for result in results:
-		i+=1
-		if i<100: # >= 100 oc.add's will not display thumbs (in plex/web)
-			title="%s" % (result['ArtistName'])
-			summary = "%s: %s (%s) [%s]" % (result['Type'], result['ArtistName'], result['ReleaseDate'], result['Status'])
-			oc.add(DirectoryObject(key=Callback(DoNothing),
-				title=title,
-				summary=summary,
-				thumb=Resource.ContentsOfURLWithFallback(url=result['ThumbURL'], fallback=R(NO_ARTIST_ART))))
+	if len(results) > 0 and not "Error" in results[0]:
+		for result in results:
+			i+=1
+			if i<100: # >= 100 oc.add's will not display thumbs (in plex/web)
+				title="%s" % (result['ArtistName'])
+				summary = "%s: %s (%s) [%s]" % (result['Type'], result['ArtistName'], result['ReleaseDate'], result['Status'])
+				oc.add(DirectoryObject(key=Callback(DoNothing),
+					title=title,
+					summary=summary,
+					thumb=Resource.ContentsOfURLWithFallback(url=result['ThumbURL'], fallback=R(NO_ARTIST_ART))))
+
+	elif len(results) ==1:
+		oc.add(PopupDirectoryObject(key=Callback(DoNothing),
+					title="Error",
+					summary="an error occured"))
 	return oc
 
 
@@ -190,17 +204,21 @@ def GetHistory():
 	oc = ObjectContainer(title2="History", no_cache=True)
 	
 	results = headphones.getHistory()
-	Log("results: %s" % results)
 
 	i=0
-	for result in results:
-		i+=1
-		if i<100: # >= 100 oc.add's will not display thumbs (in plex/web)
-			title="%s" % (result['Title'])
-			summary = "%s\n %s (%d MB) [%s]" % (result['FolderName'], result['DateAdded'], int(int(result['Size']/1024)/1024), result['Status'])
-			oc.add(PopupDirectoryObject(key=Callback(DoNothing),
-				title=title,
-				summary=summary))
+	if len(results) > 0 and not "Error" in results[0]:
+		for result in results:
+			i+=1
+			if i<100: # >= 100 oc.add's will not display thumbs (in plex/web)
+				title="%s" % (result['Title'])
+				summary = "%s\n %s (%d MB) [%s]" % (result['FolderName'], result['DateAdded'], int(int(result['Size']/1024)/1024), result['Status'])
+				oc.add(PopupDirectoryObject(key=Callback(DoNothing),
+					title=title,
+					summary=summary))
+	elif len(results) ==1:
+		oc.add(PopupDirectoryObject(key=Callback(DoNothing),
+					title="Error",
+					summary="an error occured"))
 	return oc
 
 
@@ -217,18 +235,23 @@ def Suggestions():
 	results = headphones.getSimilar()
 
 	i=0
-	for result in results:
-		Log("results: %s" % results)
-		i+=1
-		if i<100: # >= 100 oc.add's will not display thumbs (in plex/web)
-			title="%s" % (result['ArtistName'])
-			summary=""
-			#Dict['ArtistID'] = result['ArtistID']
-			oc.add(DirectoryObject(key=Callback(ShowArtist, ArtistID=result['ArtistID']),
-			#oc.add(DirectoryObject(key=Callback(ShowArtist),
-				title=title,
-				summary=summary,
-				thumb=R(NO_ARTIST_ART)))
+	if len(results) > 0 and not "Error" in results[0]:
+		for result in results:
+			Log("results: %s" % results)
+			i+=1
+			if i<100: # >= 100 oc.add's will not display thumbs (in plex/web)
+				title="%s" % (result['ArtistName'])
+				summary=""
+				#Dict['ArtistID'] = result['ArtistID']
+				oc.add(DirectoryObject(key=Callback(ShowArtist, ArtistID=result['ArtistID']),
+				#oc.add(DirectoryObject(key=Callback(ShowArtist),
+					title=title,
+					summary=summary,
+					thumb=R(NO_ARTIST_ART)))
+	elif len(results) ==1:
+		oc.add(PopupDirectoryObject(key=Callback(DoNothing),
+					title="Error",
+					summary="an error occured"))
 	return oc
 
 @route(PREFIX + '/wanted')
@@ -239,15 +262,19 @@ def Wanted():
 	"""
 	oc = ObjectContainer(title2="Wanted List")
 	results = headphones.getWanted()
-
-	for result in results:
-		title=result['AlbumTitle']
-		summary="%s by %s, Release Date: %s" % (result['Type'], result['ArtistName'], result['ReleaseDate'])
-		thumb=result['ThumbURL']
-		oc.add(DirectoryObject(key=Callback(PageSelect, ArtistID=result['ArtistID'], AlbumID=result['AlbumID']),
-			title=title,
-			summary=summary,
-			thumb=Resource.ContentsOfURLWithFallback(url=thumb, fallback=R(NO_ARTIST_ART))))	
+	if len(results) > 0 and not "Error" in results[0]:
+		for result in results:
+			title=result['AlbumTitle']
+			summary="%s by %s, Release Date: %s" % (result['Type'], result['ArtistName'], result['ReleaseDate'])
+			thumb=result['ThumbURL']
+			oc.add(DirectoryObject(key=Callback(PageSelect, ArtistID=result['ArtistID'], AlbumID=result['AlbumID']),
+				title=title,
+				summary=summary,
+				thumb=Resource.ContentsOfURLWithFallback(url=thumb, fallback=R(NO_ARTIST_ART))))
+	elif len(results) ==1:
+		oc.add(PopupDirectoryObject(key=Callback(DoNothing),
+					title="Error",
+					summary="an error occured"))
 	return oc
 
 @route(PREFIX + '/pageselect')
