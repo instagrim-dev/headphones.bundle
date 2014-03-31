@@ -50,15 +50,15 @@ def HP_URL():
 	global HTTP_ROOT
 
 	if SSL:
-		SSL="https"
+		ssl_pre="https"
 	else:
-		SSL="http"
+		ssl_pre="http"
 
 	if HTTP_ROOT:
 		pass
 	else:
 		HTTP_ROOT = "/"
-	return '%s://%s:%s%s' % (SSL, IP, PORT, HTTP_ROOT)
+	return '%s://%s:%s%s' % (ssl_pre, IP, PORT, HTTP_ROOT)
 
 def getAPI_K():
 	"""
@@ -70,9 +70,13 @@ def getAPI_K():
 	global API_K
 
 	urlopener = HPURLOpener()
-	urlopener.setpasswd(username, password)
+	if username and password:
+		urlopener.setpasswd(username, password)
+	else:
+		Log('Not using unam and pass')
 	api_key_page = urlopener.open(HP_URL() + "config").read()
 	API_K = re.search('(?<=Current API key: <strong>)[a-z0-9]{32}',api_key_page).group(0)
+	Log("Found apikey %s" % API_K)
 	return API_K
 
 def API_URL():
@@ -91,6 +95,10 @@ def HP_API_CALL(cmd, params = None):
 	http(s)://IP:port/http_root/api?apikey=API_K&cmd=$command&cmdparameters
 	"""
 	CMD = '&cmd=%s' % cmd
+	global API_K
+
+	if not API_K:
+		getAPI_K()
 	if(params):
 		urllib.urlencode(params)
 		for key, value in params.iteritems():
@@ -99,9 +107,10 @@ def HP_API_CALL(cmd, params = None):
 	Log('url created: %s' % url)
 	#try: hpResult = JSON.ObjectFromURL(url)	#plex-style
 	#try: hpResult = JSON.dumps(JSON.load(urllib.urlopen(url)), indent=4)	#python2.x-style
-	try: hpResult = JSON.load(urllib.urlopen(url))
+	try:
+		hpResult = JSON.load(urllib.urlopen(url))
 	except:
-		hpResult = {'Error':'HP_API_CALL failed'}
+		hpResult = [{'Error':'HP_API_CALL failed'}]
 	return hpResult
 
 def getIndex():
